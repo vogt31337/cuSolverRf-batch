@@ -615,9 +615,12 @@ int main (int argc, char *argv[])
 
     checkCudaErrors(cusparseSpMV(
         cusparseH, CUSPARSE_OPERATION_NON_TRANSPOSE, &minus_one, matA, vecx,
-        &one, vecAx, CUDA_R_64F, CUSPARSE_MV_ALG_DEFAULT, &buffer));
-
-    checkCudaErrors(cudaMemcpy(h_r, d_r, sizeof(double)*rowsA, cudaMemcpyDeviceToHost));
+    //    &one, vecAx, CUDA_R_64F, CUSPARSE_MV_ALG_DEFAULT, &buffer));
+	    &one, vecAx, CUDA_R_64F, CUSPARSE_MV_ALG_DEFAULT, buffer));
+    
+	checkCudaErrors(cudaDeviceSynchronize());
+    
+	checkCudaErrors(cudaMemcpy(h_r, d_r, sizeof(double)*rowsA, cudaMemcpyDeviceToHost));
 
     x_inf = vec_norminf(colsA, h_x);
     r_inf = vec_norminf(rowsA, h_r);
@@ -734,7 +737,8 @@ int main (int argc, char *argv[])
 
     for (int i = 0; i < batchSize; ++i)
     {
-        h_A_array[i] = &(h_A_batch[batchSize*i]);
+        // h_A_array[i] = &(h_A_batch[batchSize*i]);
+		h_A_array[i] = h_A_batch + i*nnzA; 
     }
     checkCudaErrors(cusolverRfBatchSetupHost(
         batchSize,
@@ -805,14 +809,19 @@ int main (int argc, char *argv[])
     //checkCudaErrors(cudaMemcpy(d_r, h_b, sizeof(double)*rowsA, cudaMemcpyHostToDevice));
     for (int i=0; i < batchSize; ++i)
     {
-        checkCudaErrors(cudaMemcpy(d_r, &h_X_batch[i*colsA], sizeof(double)*rowsA, cudaMemcpyHostToDevice));
+        //checkCudaErrors(cudaMemcpy(d_r, &h_X_batch[i*colsA], sizeof(double)*rowsA, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(d_r, h_b, sizeof(double)*rowsA, cudaMemcpyHostToDevice));
 
         // todo: cusparseSpMM
         checkCudaErrors(cusparseDnVecSetValues(
-             vecx, &d_X_batch[i*colsA]));
+        //     vecx, &d_X_batch[i*colsA]));
+		     vecx, d_X_batch + i*colsA));
         checkCudaErrors(cusparseSpMV(
             cusparseH, CUSPARSE_OPERATION_NON_TRANSPOSE, &minus_one, matA, vecx,
-            &one, vecAx, CUDA_R_64F, CUSPARSE_MV_ALG_DEFAULT, &buffer));
+            //&one, vecAx, CUDA_R_64F, CUSPARSE_MV_ALG_DEFAULT, &buffer));
+			&one, vecAx, CUDA_R_64F, CUSPARSE_MV_ALG_DEFAULT, buffer));
+
+        checkCudaErrors(cudaDeviceSynchronize());
 
         checkCudaErrors(cudaMemcpy(h_x, &d_X_batch[i*colsA], sizeof(double)*colsA, cudaMemcpyDeviceToHost));
         checkCudaErrors(cudaMemcpy(h_r, d_r, sizeof(double)*rowsA, cudaMemcpyDeviceToHost));

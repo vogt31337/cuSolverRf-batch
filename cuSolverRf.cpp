@@ -525,12 +525,14 @@ int main (int argc, char *argv[])
     checkCudaErrors(cusparseSpMV_bufferSize(
         cusparseH, CUSPARSE_OPERATION_NON_TRANSPOSE, &minus_one, matA, vecx,
         &one, vecAx, CUDA_R_64F, CUSPARSE_MV_ALG_DEFAULT, &bufferSize));
-    void *buffer = NULL;
-    checkCudaErrors(cudaMalloc(&buffer, bufferSize));
+    void *buffer = nullptr;
+	if (bufferSize > 0) {
+		checkCudaErrors(cudaMalloc(&buffer, bufferSize));
+	}
 
     checkCudaErrors(cusparseSpMV(
         cusparseH, CUSPARSE_OPERATION_NON_TRANSPOSE, &minus_one, matA, vecx,
-        &one, vecAx, CUDA_R_64F, CUSPARSE_MV_ALG_DEFAULT, &buffer));
+        &one, vecAx, CUDA_R_64F, CUSPARSE_MV_ALG_DEFAULT, buffer));
 
     checkCudaErrors(cudaMemcpy(h_r, d_r, sizeof(double)*rowsA, cudaMemcpyDeviceToHost));
 
@@ -713,7 +715,7 @@ int main (int argc, char *argv[])
 
     checkCudaErrors(cusparseSpMV(
         cusparseH, CUSPARSE_OPERATION_NON_TRANSPOSE, &minus_one, matA, vecx,
-        &one, vecAx, CUDA_R_64F, CUSPARSE_MV_ALG_DEFAULT, &buffer));
+        &one, vecAx, CUDA_R_64F, CUSPARSE_MV_ALG_DEFAULT, buffer));
 
     checkCudaErrors(cudaMemcpy(h_x, d_x, sizeof(double)*colsA, cudaMemcpyDeviceToHost));
     checkCudaErrors(cudaMemcpy(h_r, d_r, sizeof(double)*rowsA, cudaMemcpyDeviceToHost));
@@ -742,6 +744,8 @@ int main (int argc, char *argv[])
     printf(" cusolverRf reset    : %f sec\n", time_rf_reset);
     printf(" cusolverRf refactor : %f sec\n", time_rf_refactor);
     printf(" cusolverRf solve    : %f sec\n", time_rf_solve);
+
+    if (buffer) { checkCudaErrors(cudaFree(buffer)); }
 
     if (cusolverRfH) { checkCudaErrors(cusolverRfDestroy(cusolverRfH)); }
     if (cusolverSpH) { checkCudaErrors(cusolverSpDestroy(cusolverSpH)); }
