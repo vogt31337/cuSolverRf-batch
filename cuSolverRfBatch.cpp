@@ -615,11 +615,8 @@ int main (int argc, char *argv[])
 
     checkCudaErrors(cusparseSpMV(
         cusparseH, CUSPARSE_OPERATION_NON_TRANSPOSE, &minus_one, matA, vecx,
-    //    &one, vecAx, CUDA_R_64F, CUSPARSE_MV_ALG_DEFAULT, &buffer));
 	    &one, vecAx, CUDA_R_64F, CUSPARSE_MV_ALG_DEFAULT, buffer));
-    
-	checkCudaErrors(cudaDeviceSynchronize());
-    
+
 	checkCudaErrors(cudaMemcpy(h_r, d_r, sizeof(double)*rowsA, cudaMemcpyDeviceToHost));
 
     x_inf = vec_norminf(colsA, h_x);
@@ -733,7 +730,6 @@ int main (int argc, char *argv[])
 
     printf("step 9: assemble P*A*Q = L*U \n");
     start = second();
-    start = second();
 
     for (int i = 0; i < batchSize; ++i)
     {
@@ -796,7 +792,6 @@ int main (int argc, char *argv[])
     //checkCudaErrors(cudaMemcpy(d_x, h_b, sizeof(double)*rowsA, cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(d_X_batch, h_X_batch, sizeof(double)*batchSize*rowsA, cudaMemcpyHostToDevice));
 
-    start = second();
     start = second();
 
     checkCudaErrors(cusolverRfBatchSolve(cusolverRfH, d_P, d_Q, 1, d_T, rowsA, d_X_array, rowsA));
